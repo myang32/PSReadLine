@@ -35,14 +35,20 @@ namespace Microsoft.PowerShell
         private IConsole _console;
 
         private EngineIntrinsics _engineIntrinsics;
+#if !CORECLR
         private static GCHandle _breakHandlerGcHandle;
+#endif
         private Thread _readKeyThread;
         private AutoResetEvent _readKeyWaitHandle;
         private AutoResetEvent _keyReadWaitHandle;
         private ManualResetEvent _closingWaitHandle;
         private WaitHandle[] _threadProcWaitHandles;
         private WaitHandle[] _requestKeyWaitHandles;
+#if CORECLR
+        private bool _prePSReadlineControlCMode;
+#else
         private uint _prePSReadlineConsoleMode;
+#endif
 
         private readonly StringBuilder _buffer;
         private readonly StringBuilder _statusBuffer;
@@ -261,12 +267,19 @@ namespace Microsoft.PowerShell
                 throw new NotSupportedException();
             }
 
+#if CORECLR
+            _singleton._prePSReadlineControlCMode = Console.TreatControlCAsInput;
+#else
             _singleton._prePSReadlineConsoleMode = console.GetConsoleInputMode();
+#endif
             bool firstTime = true;
             while (true)
             {
                 try
                 {
+#if CORECLR
+                    Console.TreatControlCAsInput = true;
+#else
                     // Clear a couple flags so we can actually receive certain keys:
                     //     ENABLE_PROCESSED_INPUT - enables Ctrl+C
                     //     ENABLE_LINE_INPUT - enables Ctrl+S
@@ -279,6 +292,7 @@ namespace Microsoft.PowerShell
                                  NativeMethods.ENABLE_WINDOW_INPUT |
                                  NativeMethods.ENABLE_MOUSE_INPUT);
                     console.SetConsoleInputMode(mode);
+#endif
 
                     if (firstTime)
                     {
@@ -349,7 +363,11 @@ namespace Microsoft.PowerShell
                 }
                 finally
                 {
+#if CORECLR
+                    Console.TreatControlCAsInput = _singleton._prePSReadlineControlCMode;
+#else
                     console.SetConsoleInputMode(_singleton._prePSReadlineConsoleMode);
+#endif
                 }
             }
         }
@@ -437,6 +455,18 @@ namespace Microsoft.PowerShell
 
         T CalloutUsingDefaultConsoleMode<T>(Func<T> func)
         {
+#if CORECLR
+            bool psReadlineControlCMode = Console.TreatControlCAsInput;
+            try
+            {
+                Console.TreatControlCAsInput = _prePSReadlineControlCMode;
+                return func();
+            }
+            finally
+            {
+                Console.TreatControlCAsInput = psReadlineControlCMode;
+            }
+#else
             uint psReadlineConsoleMode = _console.GetConsoleInputMode();
             try
             {
@@ -447,6 +477,7 @@ namespace Microsoft.PowerShell
             {
                 _console.SetConsoleInputMode(psReadlineConsoleMode);
             }
+#endif
         }
 
         void CalloutUsingDefaultConsoleMode(Action action)
@@ -457,6 +488,7 @@ namespace Microsoft.PowerShell
         void ProcessOneKey(ConsoleKeyInfo key, Dictionary<ConsoleKeyInfo, KeyHandler> dispatchTable, bool ignoreIfNoAction, object arg)
         {
             KeyHandler handler;
+
             if (!dispatchTable.TryGetValue(key, out handler))
             {
                 // If we see a control character where Ctrl wasn't used but shift was, treat that like
@@ -558,6 +590,13 @@ namespace Microsoft.PowerShell
             _statusIsErrorMessage = false;
 
             _consoleBuffer = ReadBufferLines(_initialY, 1 + Options.ExtraPromptLineCount);
+#if CORECLR
+            string newPrompt = GetPrompt();
+            for (int i=0; i<newPrompt.Length; ++i)
+            {
+                _consoleBuffer[i].UnicodeChar = newPrompt[i];
+            }
+#endif
             _lastRenderTime = Stopwatch.StartNew();
 
             _killCommandCount = 0;
@@ -605,7 +644,11 @@ namespace Microsoft.PowerShell
                 }
             }
 
+#if CORECLR
+            _historyFileMutex = new Mutex(false);
+#else
             _historyFileMutex = new Mutex(false, GetHistorySaveFileMutexName());
+#endif
 
             _history = new HistoryQueue<HistoryItem>(Options.MaximumHistoryCount);
             _currentHistoryIndex = 0;
@@ -638,8 +681,10 @@ namespace Microsoft.PowerShell
             _killIndex = -1; // So first add indexes 0.
             _killRing = new List<string>(Options.MaximumKillRingCount);
 
+#if !CORECLR
             _breakHandlerGcHandle = GCHandle.Alloc(new BreakHandler(_singleton.BreakHandler));
             NativeMethods.SetConsoleCtrlHandler((BreakHandler)_breakHandlerGcHandle.Target, true);
+#endif
             _singleton._readKeyWaitHandle = new AutoResetEvent(false);
             _singleton._keyReadWaitHandle = new AutoResetEvent(false);
             _singleton._closingWaitHandle = new ManualResetEvent(false);
@@ -650,6 +695,7 @@ namespace Microsoft.PowerShell
             // DomainUnload event is not raised for the default appdomain). It allows us
             // to exit cleanly when the appdomain is unloaded but the process is not going
             // away.
+#if !CORECLR
             if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
             {
                 AppDomain.CurrentDomain.DomainUnload += (x, y) =>
@@ -658,6 +704,7 @@ namespace Microsoft.PowerShell
                     _singleton._readKeyThread.Join(); // may need to wait for history to be written
                 };
             }
+#endif
 
             _singleton._readKeyThread = new Thread(_singleton.ReadKeyThreadProc) {IsBackground = true};
             _singleton._readKeyThread.Start();
@@ -684,11 +731,13 @@ namespace Microsoft.PowerShell
 
         private static void ExecuteOnSTAThread(Action action)
         {
+#if !CORECLR
             if (Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
             {
                 action();
                 return;
             }
+#endif
 
             Exception exception = null;
             var thread = new Thread(() =>
@@ -703,7 +752,9 @@ namespace Microsoft.PowerShell
                 }
             });
 
+#if !CORECLR
             thread.SetApartmentState(ApartmentState.STA);
+#endif
             thread.Start();
             thread.Join();
 
@@ -838,6 +889,24 @@ namespace Microsoft.PowerShell
             _singleton._console.CursorLeft = 0;
             _singleton._console.CursorTop = _singleton._initialY;
 
+            string newPrompt = GetPrompt();
+            _singleton._console.Write(newPrompt);
+
+            _singleton._initialX = _singleton._console.CursorLeft;
+            _singleton._consoleBuffer = ReadBufferLines(_singleton._initialY, 1 + _singleton.Options.ExtraPromptLineCount);
+#if CORECLR
+            for (int i=0; i<newPrompt.Length; ++i)
+            {
+                _singleton._consoleBuffer[i].UnicodeChar = newPrompt[i];
+            }
+#endif
+            _singleton._buffer.Append(currentBuffer);
+            _singleton._current = currentPos;
+            _singleton.Render();
+        }
+
+        public static string GetPrompt()
+        {
             var runspaceIsRemote = _singleton._mockableMethods.RunspaceIsRemote(_singleton._runspace);
             System.Management.Automation.PowerShell ps;
             if (!runspaceIsRemote)
@@ -865,13 +934,7 @@ namespace Microsoft.PowerShell
                     newPrompt = string.Format(CultureInfo.InvariantCulture, "[{0}]: {1}", connectionInfo.ComputerName, newPrompt);
                 }
             }
-            _singleton._console.Write(newPrompt);
-
-            _singleton._initialX = _singleton._console.CursorLeft;
-            _singleton._consoleBuffer = ReadBufferLines(_singleton._initialY, 1 + _singleton.Options.ExtraPromptLineCount);
-            _singleton._buffer.Append(currentBuffer);
-            _singleton._current = currentPos;
-            _singleton.Render();
+            return newPrompt;
         }
 
         #endregion Miscellaneous bindable functions
