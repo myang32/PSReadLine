@@ -499,6 +499,7 @@ namespace Microsoft.PowerShell
                     dispatchTable.TryGetValue(key, out handler);
                 }
             }
+
             if (handler != null)
             {
                 if (handler.ScriptBlock != null)
