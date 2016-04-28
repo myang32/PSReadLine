@@ -696,6 +696,7 @@ namespace Microsoft.PowerShell
 
         #region Screen scrolling
 
+#if !CORECLR
         /// <summary>
         /// Scroll the display up one screen.
         /// </summary>
@@ -808,6 +809,7 @@ namespace Microsoft.PowerShell
             console.SetWindowPosition(0, newTop);
         }
 
+#endif
         #endregion Screen scrolling
     }
 }

@@ -56,6 +56,9 @@ namespace Microsoft.PowerShell
             void EndRender();
 
             bool IsHandleRedirected(bool stdin);
+#if CORECLR
+            void Clear();
+#endif
         }
 
 #pragma warning restore 1591

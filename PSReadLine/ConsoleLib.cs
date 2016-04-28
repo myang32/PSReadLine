@@ -895,6 +895,13 @@ namespace Microsoft.PowerShell.Internal
             uint mode;
             return !NativeMethods.GetConsoleMode(handle, out mode);
         }
+
+#if CORECLR
+        public void Clear()
+        {
+            Console.Clear();
+        }
+#endif
     }
 
 #pragma warning restore 1591
