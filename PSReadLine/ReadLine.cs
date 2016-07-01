@@ -262,7 +262,7 @@ namespace Microsoft.PowerShell
 
             // If either stdin or stdout is redirected, PSReadline doesn't really work, so throw
             // and let PowerShell call Console.ReadLine or do whatever else it decides to do.
-            if (console.IsHandleRedirected(stdin: false) || console.IsHandleRedirected(stdin: true))
+            if (Console.IsInputRedirected || Console.IsOutputRedirected)
             {
                 throw new NotSupportedException();
             }
