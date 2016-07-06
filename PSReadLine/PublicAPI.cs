@@ -54,9 +54,7 @@ namespace Microsoft.PowerShell
             void StartRender();
             int LengthInBufferCells(char c);
             void EndRender();
-
-            bool IsHandleRedirected(bool stdin);
-#if CORECLR
+#if LINUX
             void Clear();
 #endif
         }

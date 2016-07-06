@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Management.Automation.Language;
-#if !CORECLR
+#if !CORECLR // TODO: clipboard
 using System.Windows.Forms;
 #endif
 
@@ -452,7 +452,7 @@ namespace Microsoft.PowerShell
         /// </summary>
         public static void Paste(ConsoleKeyInfo? key = null, object arg = null)
         {
-#if !CORECLR
+#if !CORECLR // TODO: clipboard
             string textToPaste = null;
             ExecuteOnSTAThread(() => {
                 if (Clipboard.ContainsText())
@@ -483,7 +483,7 @@ namespace Microsoft.PowerShell
         /// </summary>
         public static void Copy(ConsoleKeyInfo? key = null, object arg = null)
         {
-#if !CORECLR
+#if !CORECLR // TODO: clipboard
             string textToSet;
             if (_singleton._visualSelectionCommandCount > 0)
             {
@@ -522,15 +522,15 @@ namespace Microsoft.PowerShell
         /// </summary>
         public static void Cut(ConsoleKeyInfo? key = null, object arg = null)
         {
-#if !CORECLR
             if (_singleton._visualSelectionCommandCount > 0)
             {
                 int start, length;
                 _singleton.GetRegion(out start, out length);
+#if !CORECLR // TODO: clipboard
                 ExecuteOnSTAThread(() => Clipboard.SetText(_singleton._buffer.ToString(start, length)));
+#endif
                 Delete(start, length);
             }
-#endif
         }
     }
 }

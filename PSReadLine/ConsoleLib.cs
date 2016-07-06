@@ -228,9 +228,7 @@ namespace Microsoft.PowerShell.Internal
         public short Right;
         public short Bottom;
 
-#if !CORECLR
         [ExcludeFromCodeCoverage]
-#endif
         public override string ToString()
         {
             return String.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3}", Left, Top, Right, Bottom);
@@ -242,9 +240,7 @@ namespace Microsoft.PowerShell.Internal
         public short X;
         public short Y;
 
-#if !CORECLR
         [ExcludeFromCodeCoverage]
-#endif
         public override string ToString()
         {
             return String.Format(CultureInfo.InvariantCulture, "{0},{1}", X, Y);
@@ -307,18 +303,6 @@ namespace Microsoft.PowerShell.Internal
 
     public struct CHAR_INFO
     {
-#if CORECLR
-        public char UnicodeChar;
-        public ConsoleColor ForegroundColor;
-        public ConsoleColor BackgroundColor;
-
-        public CHAR_INFO(char c, ConsoleColor foreground, ConsoleColor background)
-        {
-            UnicodeChar = c;
-            ForegroundColor = foreground;
-            BackgroundColor = background;
-        }
-#else
         public ushort UnicodeChar;
         public ushort Attributes;
 
@@ -371,7 +355,6 @@ namespace Microsoft.PowerShell.Internal
         {
             return UnicodeChar.GetHashCode() + Attributes.GetHashCode();
         }
-#endif
     }
 
     internal static class ConsoleKeyInfoExtension
@@ -392,9 +375,10 @@ namespace Microsoft.PowerShell.Internal
                 sb.Append("Alt");
             }
 
-#if CORECLR
+#if LINUX
             if (sb.Length > 0)
                 sb.Append("+");
+            // TODO: find better way to map these characters to something more friendly
             if ((key.Key >= ConsoleKey.D0 && key.Key <= ConsoleKey.D9)
                 || (key.Key >= ConsoleKey.Oem1 && key.Key <= ConsoleKey.Oem8))
             {
@@ -601,9 +585,6 @@ namespace Microsoft.PowerShell.Internal
 
         public void WriteBufferLines(CHAR_INFO[] buffer, ref int top, bool ensureBottomLineVisible)
         {
-#if !CORECLR
-            var handle = NativeMethods.GetStdHandle((uint) StandardHandleId.Output);
-#endif
             int bufferWidth = Console.BufferWidth;
             int bufferLineCount = buffer.Length / bufferWidth;
             if ((top + bufferLineCount) > Console.BufferHeight)
@@ -612,7 +593,7 @@ namespace Microsoft.PowerShell.Internal
                 ScrollBuffer(scrollCount);
                 top -= scrollCount;
             }
-#if CORECLR
+#if LINUX
             ConsoleColor foregroundColor = Console.ForegroundColor;
             ConsoleColor backgroundColor = Console.BackgroundColor;
 
@@ -620,6 +601,7 @@ namespace Microsoft.PowerShell.Internal
 
             for (int i = 0; i < buffer.Length; ++i)
             {
+                // TODO: use escape sequences for better perf
                 Console.ForegroundColor =  buffer[i].ForegroundColor;
                 Console.BackgroundColor =  buffer[i].BackgroundColor;
 
@@ -629,6 +611,7 @@ namespace Microsoft.PowerShell.Internal
             Console.BackgroundColor = backgroundColor;
             Console.ForegroundColor = foregroundColor;
 #else
+            var handle = NativeMethods.GetStdHandle((uint) StandardHandleId.Output);
             var bufferSize = new COORD
             {
                 X = (short) bufferWidth,
@@ -657,7 +640,7 @@ namespace Microsoft.PowerShell.Internal
 
         public void ScrollBuffer(int lines)
         {
-#if CORECLR
+#if LINUX
             for (int i=0; i<lines; ++i)
             {
                 Console.SetCursorPosition(Console.BufferWidth, Console.BufferHeight - 1);
@@ -682,7 +665,7 @@ namespace Microsoft.PowerShell.Internal
         public CHAR_INFO[] ReadBufferLines(int top, int count)
         {
             var result = new CHAR_INFO[BufferWidth * count];
-#if CORECLR
+#if LINUX
             for (int i=0; i<BufferWidth*count; ++i)
             {
                 result[i].UnicodeChar = ' ';
@@ -882,27 +865,20 @@ namespace Microsoft.PowerShell.Internal
             }
         }
 
-        public bool IsHandleRedirected(bool stdIn)
-        {
-            var handle = NativeMethods.GetStdHandle((uint)(stdIn ? StandardHandleId.Input : StandardHandleId.Output));
-
-            // If handle is not to a character device, we must be redirected:
-            int fileType = NativeMethods.GetFileType(handle);
-            if ((fileType & NativeMethods.FILE_TYPE_CHAR) != NativeMethods.FILE_TYPE_CHAR)
-                return true;
-
-            // Char device - if GetConsoleMode succeeds, we are NOT redirected.
-            uint mode;
-            return !NativeMethods.GetConsoleMode(handle, out mode);
-        }
-
-#if CORECLR
+#if LINUX // TODO: this is not correct, PSReadline never clears the screen, it should only scroll
         public void Clear()
         {
             Console.Clear();
         }
 #endif
     }
+
+#if CORECLR // TODO: remove if CORECLR adds this attribute back
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Event)]
+    sealed class ExcludeFromCodeCoverageAttribute : Attribute
+    {
+    }
+#endif
 
 #pragma warning restore 1591
 }
