@@ -486,8 +486,6 @@ namespace Microsoft.PowerShell
             _console = new ConhostConsole();
 #endif
 
-            SetDefaultWindowsBindings();
-
             _buffer = new StringBuilder(8 * 1024);
             _statusBuffer = new StringBuilder(256);
             _savedCurrentLine = new HistoryItem();
@@ -517,6 +515,7 @@ namespace Microsoft.PowerShell
                 hostName = "PSReadline";
             }
             _options = new PSConsoleReadlineOptions(hostName);
+            SetDefaultBindings(_options.EditMode);
         }
 
         private void Initialize(Runspace runspace, EngineIntrinsics engineIntrinsics)
