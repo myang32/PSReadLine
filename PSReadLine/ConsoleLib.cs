@@ -306,13 +306,13 @@ namespace Microsoft.PowerShell.Internal
         public char UnicodeChar;
         public ConsoleColor ForegroundColor;
         public ConsoleColor BackgroundColor;
-#if !LINUX
+#if !UNIX
         public bool IsLeadByte;
         public bool IsTrailByte;
 #endif
         public bool Inverse;
 
-#if !LINUX
+#if !UNIX
         public CHAR_INFO ToCharInfo()
         {
             int fg = (int) ForegroundColor;
@@ -378,7 +378,7 @@ namespace Microsoft.PowerShell.Internal
                 sb.Append("Alt");
             }
 
-#if LINUX
+#if UNIX
             if (sb.Length > 0)
                 sb.Append("+");
             // TODO: find better way to map these characters to something more friendly
@@ -421,7 +421,7 @@ namespace Microsoft.PowerShell.Internal
         }
     }
 
-#if !LINUX
+#if !UNIX
     internal class ConhostConsole : IConsole
     {
         [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]

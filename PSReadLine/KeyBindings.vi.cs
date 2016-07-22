@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell
                 { Keys.Tab,             MakeKeyHandler(ViTabCompleteNext,      "ViTabCompleteNext") },
                 { Keys.ShiftTab,        MakeKeyHandler(ViTabCompletePrevious,  "ViTabCompletePrevious") },
                 { Keys.CtrlV,           MakeKeyHandler(Paste,                  "Paste") },
-#if !LINUX
+#if !UNIX
                 { Keys.VolumeDown,      MakeKeyHandler(Ignore,                 "Ignore") },
                 { Keys.VolumeUp,        MakeKeyHandler(Ignore,                 "Ignore") },
                 { Keys.VolumeMute,      MakeKeyHandler(Ignore,                 "Ignore") },
@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell
                 { Keys.Tab,             MakeKeyHandler(TabCompleteNext,      "TabCompleteNext") },
                 { Keys.ShiftTab,        MakeKeyHandler(TabCompletePrevious,  "TabCompletePrevious") },
                 { Keys.CtrlV,           MakeKeyHandler(Paste,                "Paste") },
-#if !LINUX
+#if !UNIX
                 { Keys.VolumeDown,      MakeKeyHandler(Ignore,               "Ignore") },
                 { Keys.VolumeUp,        MakeKeyHandler(Ignore,               "Ignore") },
                 { Keys.VolumeMute,      MakeKeyHandler(Ignore,               "Ignore") },
