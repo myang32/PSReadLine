@@ -762,7 +762,7 @@ namespace Microsoft.PowerShell.Internal
                      (0xffd2 <= c && c <= 0xffd7) ||
                      (0xffda <= c && c <= 0xffdc))
             {
-                /* Halfwidth Hangule variants */
+                /* Halfwidth Hangul variants */
                 return 1;
             }
             else if (0xffe0 <= c && c <= 0xffe6)
