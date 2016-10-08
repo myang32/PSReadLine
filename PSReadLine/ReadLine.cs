@@ -216,7 +216,27 @@ namespace Microsoft.PowerShell
                 throw new OperationCanceledException();
             }
 
-            var key = _singleton._queuedKeys.Dequeue();
+            var key = NormalizeKey(_singleton._queuedKeys.Dequeue());
+
+            return key;
+        }
+
+        internal static ConsoleKeyInfo NormalizeKey(ConsoleKeyInfo key)
+        {
+            // The ConsoleKeyInfo returned on *nix and Windows can be quite different.
+            // Furthermore, sometimes the Key differs depending on the keyboard.
+            // We try to normalize these differences here.
+            if (key.KeyChar != 0)
+            {
+                // We'll ignore ConsoleKey, assume KeyChar and alt/control modifiers give us everything
+                // we need (ignoring shift also helps as shift state could differ for some keys depending
+                // on the keyboard).
+                var shift = (key.Modifiers & ConsoleModifiers.Shift) != 0 && char.IsControl(key.KeyChar);
+                var alt = (key.Modifiers & ConsoleModifiers.Alt) != 0;
+                var control = (key.Modifiers & ConsoleModifiers.Control) != 0;
+                key = new ConsoleKeyInfo(key.KeyChar, 0, shift, alt, control);
+            }
+
             return key;
         }
 

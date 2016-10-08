@@ -78,32 +78,6 @@ namespace Microsoft.PowerShell
             public ScriptBlock ScriptBlock;
         }
 
-        internal class ConsoleKeyInfoComparer : IEqualityComparer<ConsoleKeyInfo>
-        {
-            public bool Equals(ConsoleKeyInfo x, ConsoleKeyInfo y)
-            {
-                // We *must not* compare the KeyChar field as its value is platform-dependent.
-                // We compare exactly the ConsoleKey enum field (which is platform-agnostic)
-                // and the modifiers.
-
-                return x.Key == y.Key && x.Modifiers == y.Modifiers;
-            }
-
-            public int GetHashCode(ConsoleKeyInfo obj)
-            {
-                // Because a comparison of two ConsoleKeyInfo objects is a comparison of the
-                // combination of the ConsoleKey and Modifiers, we must combine their hashes.
-                // Note that if the ConsoleKey is default, we must fall back to the KeyChar,
-                // otherwise every non-special key will compare as the same.
-                int h1 = obj.Key == default(ConsoleKey)
-                    ? obj.KeyChar.GetHashCode()
-                    : obj.Key.GetHashCode();
-                int h2 = obj.Modifiers.GetHashCode();
-                // This is based on Tuple.GetHashCode
-                return unchecked(((h1 << 5) + h1) ^ h2);
-            }
-        }
-
         static KeyHandler MakeKeyHandler(Action<ConsoleKeyInfo?, object> action, string briefDescription, string longDescription = null, ScriptBlock scriptBlock = null)
         {
             return new KeyHandler
@@ -139,7 +113,7 @@ namespace Microsoft.PowerShell
 
         void SetDefaultWindowsBindings()
         {
-            _dispatchTable = new Dictionary<ConsoleKeyInfo, KeyHandler>(new ConsoleKeyInfoComparer())
+            _dispatchTable = new Dictionary<ConsoleKeyInfo, KeyHandler>
             {
                 { Keys.Enter,                  MakeKeyHandler(AcceptLine,                "AcceptLine") },
                 { Keys.ShiftEnter,             MakeKeyHandler(AddLine,                   "AddLine") },
@@ -217,7 +191,7 @@ namespace Microsoft.PowerShell
 
         void SetDefaultEmacsBindings()
         {
-            _dispatchTable = new Dictionary<ConsoleKeyInfo, KeyHandler>(new ConsoleKeyInfoComparer())
+            _dispatchTable = new Dictionary<ConsoleKeyInfo, KeyHandler>()
             {
                 { Keys.Backspace,       MakeKeyHandler(BackwardDeleteChar,   "BackwardDeleteChar") },
                 { Keys.Enter,           MakeKeyHandler(AcceptLine,           "AcceptLine") },
@@ -304,7 +278,7 @@ namespace Microsoft.PowerShell
             _chordDispatchTable = new Dictionary<ConsoleKeyInfo, Dictionary<ConsoleKeyInfo, KeyHandler>>();
 
             // Escape,<key> table (meta key)
-            _chordDispatchTable[Keys.Escape] = new Dictionary<ConsoleKeyInfo, KeyHandler>(new ConsoleKeyInfoComparer())
+            _chordDispatchTable[Keys.Escape] = new Dictionary<ConsoleKeyInfo, KeyHandler>
             {
                 { Keys.B,               MakeKeyHandler(BackwardWord,         "BackwardWord") },
                 { Keys.D,               MakeKeyHandler(KillWord,             "KillWord") },
@@ -318,7 +292,7 @@ namespace Microsoft.PowerShell
             };
 
             // Ctrl+X,<key> table
-            _chordDispatchTable[Keys.CtrlX] = new Dictionary<ConsoleKeyInfo, KeyHandler>(new ConsoleKeyInfoComparer())
+            _chordDispatchTable[Keys.CtrlX] = new Dictionary<ConsoleKeyInfo, KeyHandler>
             {
                 { Keys.Backspace,       MakeKeyHandler(BackwardKillLine,     "BackwardKillLine") },
                 { Keys.CtrlU,           MakeKeyHandler(Undo,                 "Undo") },
