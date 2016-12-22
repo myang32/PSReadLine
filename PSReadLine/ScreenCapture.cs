@@ -191,10 +191,8 @@ namespace Microsoft.PowerShell
         private static string GetColorTable()
         {
             var handle = NativeMethods.GetStdHandle((uint) StandardHandleId.Output);
-            var csbe = new NativeMethods.CONSOLE_SCREEN_BUFFER_INFO_EX
-            {
-                cbSize = Marshal.SizeOf<NativeMethods.CONSOLE_SCREEN_BUFFER_INFO_EX>()
-            };
+            var csbe = new NativeMethods.CONSOLE_SCREEN_BUFFER_INFO_EX();
+            csbe.cbSize = Marshal.SizeOf(csbe);
             if (NativeMethods.GetConsoleScreenBufferInfoEx(handle, ref csbe))
             {
                 return GetRTFColorFromColorRef(csbe.Black) +
