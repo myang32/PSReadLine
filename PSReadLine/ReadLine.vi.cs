@@ -640,7 +640,8 @@ namespace Microsoft.PowerShell
                 char c = _singleton._buffer[_singleton._current];
                 if (Char.IsLetter(c))
                 {
-                    char newChar = Char.IsUpper(c) ? Char.ToLower(c, CultureInfo.CurrentCulture) : char.ToUpper(c, CultureInfo.CurrentCulture);
+                    var textInfo = CultureInfo.CurrentCulture.TextInfo;
+                    char newChar = char.IsUpper(c) ? textInfo.ToLower(c) : textInfo.ToUpper(c);
                     EditItem delEditItem = EditItemDelete.Create(c.ToString(), _singleton._current);
                     EditItem insEditItem = EditItemInsertChar.Create(newChar, _singleton._current);
                     _singleton.SaveEditItem(GroupedEdit.Create(new List<EditItem> 
