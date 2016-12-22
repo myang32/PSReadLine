@@ -900,6 +900,8 @@ namespace Microsoft.PowerShell
         private const string PromptCommand = "prompt";
         private const string DefaultPrompt = "PS>";
 
+        private static bool skipInBreakpointCheck = false;
+
         /// <summary>
         /// Gets the current prompt as possibly defined by the user through the
         /// prompt function, and returns a default prompt if no other is
@@ -909,15 +911,36 @@ namespace Microsoft.PowerShell
         {
             string newPrompt;
             var runspaceIsRemote = _singleton._mockableMethods.RunspaceIsRemote(_singleton._runspace);
+            dynamic debugger = null;
 
-            if ((_singleton._runspace.Debugger != null) && _singleton._runspace.Debugger.InBreakpoint)
+            bool inBreakpoint = false;
+            if (!skipInBreakpointCheck)
+            {
+                try
+                {
+                    debugger = _singleton._runspace.Debugger;
+                    if (debugger != null)
+                    {
+                        // This api is in v6 only.
+                        // To simplify building against multiple versions of PowerShell, we use dynamic
+                        // and gracefully fail by catching the exception and assuming false.
+                        inBreakpoint = debugger.InBreakpoint;
+                    }
+                }
+                catch
+                {
+                    skipInBreakpointCheck = true;
+                }
+            }
+
+            if (inBreakpoint)
             {
                 // Run prompt command in debugger API to ensure it is run correctly on the runspace.
                 // This handles remote runspace debugging and nested debugger scenarios.
                 PSDataCollection<PSObject> results = new PSDataCollection<PSObject>();
                 var command = new PSCommand();
                 command.AddCommand(PromptCommand);
-                _singleton._runspace.Debugger.ProcessCommand(
+                debugger.ProcessCommand(
                     command,
                     results);
 
