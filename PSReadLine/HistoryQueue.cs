@@ -12,7 +12,6 @@ using Microsoft.PowerShell.Internal;
 
 namespace Microsoft.PowerShell
 {
-    [ExcludeFromCodeCoverage]
     internal sealed class QueueDebugView<T>
     {
         private readonly HistoryQueue<T> _queue;
@@ -117,7 +116,6 @@ namespace Microsoft.PowerShell
             return result;
         }
 
-        [ExcludeFromCodeCoverage]
         public T this[int index]
         {
             get

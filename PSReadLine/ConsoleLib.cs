@@ -228,7 +228,6 @@ namespace Microsoft.PowerShell.Internal
         public short Right;
         public short Bottom;
 
-        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return String.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3}", Left, Top, Right, Bottom);
@@ -240,7 +239,6 @@ namespace Microsoft.PowerShell.Internal
         public short X;
         public short Y;
 
-        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return String.Format(CultureInfo.InvariantCulture, "{0},{1}", X, Y);

@@ -27,7 +27,6 @@ namespace Microsoft.PowerShell
         private static string DirectorySeparatorString = System.IO.Path.DirectorySeparatorChar.ToString();
 
         // Stub helper method so completion can be mocked
-        [ExcludeFromCodeCoverage]
         CommandCompletion IPSConsoleReadLineMockableMethods.CompleteInput(string input, int cursorIndex, Hashtable options, System.Management.Automation.PowerShell powershell)
         {
             return CalloutUsingDefaultConsoleMode(

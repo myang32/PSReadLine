@@ -648,7 +648,6 @@ namespace Microsoft.PowerShell
             return (_statusLinePrompt.Length + _statusBuffer.Length) / _console.BufferWidth + 1;
         }
 
-        [ExcludeFromCodeCoverage]
         void IPSConsoleReadLineMockableMethods.Ding()
         {
             switch (Options.BellStyle)

@@ -385,7 +385,6 @@ namespace Microsoft.PowerShell
     [OutputType(typeof(PSConsoleReadlineOptions))]
     public class GetPSReadlineOption : PSCmdlet
     {
-        [ExcludeFromCodeCoverage]
         protected override void EndProcessing()
         {
             WriteObject(PSConsoleReadLine.GetOptions());
@@ -629,7 +628,6 @@ namespace Microsoft.PowerShell
         }
         internal ConsoleColor? _backgroundColor;
 
-        [ExcludeFromCodeCoverage]
         protected override void EndProcessing()
         {
             PSConsoleReadLine.SetOptions(this);
@@ -647,7 +645,6 @@ namespace Microsoft.PowerShell
         [Parameter]
         public ViMode ViMode { get; set; }
 
-        [ExcludeFromCodeCoverage]
         protected IDisposable UseRequestedDispatchTables()
         {
             bool inViMode = PSConsoleReadLine.GetOptions().EditMode == EditMode.Vi;
@@ -690,7 +687,6 @@ namespace Microsoft.PowerShell
         private const string FunctionParameter = "Function";
         private const string FunctionParameterSet = "Function";
 
-        [ExcludeFromCodeCoverage]
         protected override void EndProcessing()
         {
             using (UseRequestedDispatchTables())
@@ -768,7 +764,6 @@ namespace Microsoft.PowerShell
         }
         private SwitchParameter? _unbound;
 
-        [ExcludeFromCodeCoverage]
         protected override void EndProcessing()
         {
             bool bound = true;
@@ -795,7 +790,6 @@ namespace Microsoft.PowerShell
     [Cmdlet("Remove", "PSReadlineKeyHandler", HelpUri = "https://go.microsoft.com/fwlink/?LinkId=528809")]
     public class RemoveKeyHandlerCommand : ChangePSReadlineKeyHandlerCommandBase
     {
-        [ExcludeFromCodeCoverage]
         protected override void EndProcessing()
         {
             using (UseRequestedDispatchTables())
