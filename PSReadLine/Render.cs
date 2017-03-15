@@ -46,6 +46,15 @@ namespace Microsoft.PowerShell
 
         private void ClearStatusMessage()
         {
+            var statusLineCount = _singleton.GetStatusLineCount();
+            if (statusLineCount > 0)
+            {
+                var x = _console.CursorLeft;
+                var y = _console.CursorTop;
+                var coordinates = ConvertOffsetToCoordinates(_current);
+                WriteBlankLines(statusLineCount, coordinates.Y + 1);
+                _console.SetCursorPosition(x, y);
+            }
             _statusBuffer.Clear();
             _statusLinePrompt = null;
             _statusIsErrorMessage = false;
@@ -588,6 +597,7 @@ namespace Microsoft.PowerShell
 
         private static void WriteBlankLines(int count, int top)
         {
+            _singleton._console.SetCursorPosition(0, top);
             var console = _singleton._console;
             var line = new string(' ', console.BufferWidth);
             while (count-- > 0)
