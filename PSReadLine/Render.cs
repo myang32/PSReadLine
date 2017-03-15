@@ -15,6 +15,7 @@ namespace Microsoft.PowerShell
     {
         private List<RenderInst> _prevRenderInst = new List<RenderInst>(100);
         private List<RenderInst> _renderInst = new List<RenderInst>(100);
+        private readonly StringBuilder _renderingBuffer = new StringBuilder();
         private int _initialX;
         private int _initialY;
         private int _current;
@@ -157,14 +158,14 @@ namespace Microsoft.PowerShell
             }
         }
 
-        private void Dump(List<RenderInst> instrs)
+        private void DoActualRendering(List<RenderInst> instrs)
         {
             var fg = _console.ForegroundColor;
             var bg = _console.BackgroundColor;
 
             int x = _initialX;
             int y = _initialY;
-            var sb = new StringBuilder();
+            _renderingBuffer.Clear();
 
             var savedBgColor = bg;
             var savedFgColor = fg;
@@ -214,14 +215,14 @@ namespace Microsoft.PowerShell
                 switch (inst.op)
                 {
                     case RenderOp.Flush:
-                        FlushBuffer(sb, nextFgColor, nextBgColor);
+                        FlushBuffer(nextFgColor, nextBgColor);
                         break;
 
                     case RenderOp.Text:
                         var c = inst.text;
                         if (c == '\n')
                         {
-                            idxPrevInsts = HandleEOLRendering(idxPrevInsts, charsOnLineCurrRender, sb, eob: false);
+                            idxPrevInsts = HandleEOLRendering(idxPrevInsts, charsOnLineCurrRender, eob: false);
                             charsOnLineCurrRender = 0;
                             x = 0;
                             y += 1;
@@ -234,7 +235,7 @@ namespace Microsoft.PowerShell
                         }
                         if (!matchesPrev)
                         {
-                            sb.Append(c);
+                            _renderingBuffer.Append(c);
                         }
                         break;
 
@@ -270,9 +271,9 @@ namespace Microsoft.PowerShell
             }
 
             // Erase any artifacts from the previous render
-            HandleEOLRendering(idxPrevInsts, charsOnLineCurrRender, sb, eob: true);
+            HandleEOLRendering(idxPrevInsts, charsOnLineCurrRender, eob: true);
 
-            if (sb.Length > 0)
+            if (_renderingBuffer.Length > 0)
             {
                 if (matchesPrev)
                 {
@@ -281,7 +282,7 @@ namespace Microsoft.PowerShell
                     x = x % bufWidth;
                     _console.SetCursorPosition(x, y);
                 }
-                FlushBuffer(sb, nextFgColor, nextBgColor);
+                FlushBuffer(nextFgColor, nextBgColor);
             }
 
             PlaceCursor();
@@ -290,9 +291,9 @@ namespace Microsoft.PowerShell
             _console.ForegroundColor = fg;
         }
 
-        private void FlushBuffer(StringBuilder sb, ConsoleColor fgColor, ConsoleColor bgColor)
+        private void FlushBuffer(ConsoleColor fgColor, ConsoleColor bgColor)
         {
-            if (sb.Length > 0)
+            if (_renderingBuffer.Length > 0)
             {
                 if (bgColor != Console.BackgroundColor)
                 {
@@ -302,12 +303,12 @@ namespace Microsoft.PowerShell
                 {
                     _console.ForegroundColor = fgColor;
                 }
-                _console.Write(sb.ToString());
-                sb.Clear();
+                _console.Write(_renderingBuffer.ToString());
+                _renderingBuffer.Clear();
             }
         }
 
-        private int HandleEOLRendering(int idxPrevInsts, int charsOnLineCurrRender, StringBuilder sb, bool eob)
+        private int HandleEOLRendering(int idxPrevInsts, int charsOnLineCurrRender, bool eob)
         {
             int charsOnLinePrevRender = 0;
             for (; idxPrevInsts < _prevRenderInst.Count; idxPrevInsts++)
@@ -330,7 +331,7 @@ namespace Microsoft.PowerShell
 
             if (charsOnLinePrevRender > charsOnLineCurrRender)
             {
-                sb.Append(' ', charsOnLinePrevRender - charsOnLineCurrRender);
+                _renderingBuffer.Append(' ', charsOnLinePrevRender - charsOnLineCurrRender);
             }
 
             if (eob)
@@ -344,8 +345,8 @@ namespace Microsoft.PowerShell
                         var prevC = prevInst.text;
                         if (prevC == '\n')
                         {
-                            sb.Append(' ', charsOnLinePrevRender);
-                            sb.Append('\n');
+                            _renderingBuffer.Append(' ', charsOnLinePrevRender);
+                            _renderingBuffer.Append('\n');
                             charsOnLinePrevRender = 0;
                         }
                         else
@@ -357,7 +358,7 @@ namespace Microsoft.PowerShell
 
                 if (charsOnLinePrevRender > 0)
                 {
-                    sb.Append(' ', charsOnLinePrevRender);
+                    _renderingBuffer.Append(' ', charsOnLinePrevRender);
                 }
             }
 
@@ -370,10 +371,13 @@ namespace Microsoft.PowerShell
             {
                 _console.StartRender();
 
+                // We save two buffers of rendering instructions - the current and previous
+                // Saving the previous helps us minimize what we redraw.
+                // Swap references so we can reuse the old "previous" list.
                 var tmp = _renderInst;
                 _renderInst = _prevRenderInst;
-                _renderInst.Clear();
                 _prevRenderInst = tmp;
+                _renderInst.Clear();
 
                 var text = ParseInput();
 
@@ -580,7 +584,7 @@ namespace Microsoft.PowerShell
                 _console.EndRender();
             }
 
-            Dump(_renderInst);
+            DoActualRendering(_renderInst);
 
             _lastRenderTime.Restart();
         }
