@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
@@ -14,7 +13,6 @@ namespace TestPSReadLine
             throw new Exception("intentional crash for test purposes");
         }
 
-        [STAThread]
         static void Main()
         {
             //Box(new List<string> {"abc", "  def", "this is something coo"});
