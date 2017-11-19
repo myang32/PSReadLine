@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell
                     _lastNKeys.Enqueue(key);
                     _queuedKeys.Enqueue(key);
                 }
-                if (_readkeyStopwatch.ElapsedMilliseconds > 2)
+                if (_readkeyStopwatch.ElapsedMilliseconds > 20)
                 {
                     // Don't spend too long in this loop if there are lots of queued keys
                     Console.WriteLine("break");
@@ -101,6 +101,7 @@ namespace Microsoft.PowerShell
             {
                 while (!_charMap.KeyAvailable)
                 {
+                    Console.WriteLine("nomnom");
                     // Don't want to block when there is an escape sequence being read.
                     if (_charMap.InEscapeSequence)
                     {
@@ -116,7 +117,6 @@ namespace Microsoft.PowerShell
                             // small sleep to yield the CPU while we're waiting
                             // to decide what the input was. This will only run
                             // if there are no keys waiting to be read.
-                            Console.WriteLine("sleep");
                             Thread.Sleep(5);
                         }
                     }
