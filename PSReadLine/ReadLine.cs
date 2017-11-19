@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell
         private static readonly Stopwatch _readkeyStopwatch = new Stopwatch();
 
         // Save a fixed # of keys so we can reconstruct a repro after a crash
-        private static readonly HistoryQueue<ConsoleKeyInfo> _lastNKeys = new HistoryQueue<ConsoleKeyInfo>(300);
+        private static readonly HistoryQueue<ConsoleKeyInfo> _lastNKeys = new HistoryQueue<ConsoleKeyInfo>(200);
 
         // Tokens etc.
         private Token[] _tokens;
@@ -80,9 +80,11 @@ namespace Microsoft.PowerShell
                 // returns false. Make sure to check KeyAvailable after every ProcessKey call,
                 // and clear it in a loop in case the input was something like ^[[1 which can
                 // be 3, 2, or part of 1 key depending on timing.
+                Console.WriteLine("coka");
                 _charMap.ProcessKey(_console.ReadKey());
                 while (_charMap.KeyAvailable)
                 {
+                  Console.WriteLine("cmka");
                     var key = _charMap.ReadKey();
                     _lastNKeys.Enqueue(key);
                     _queuedKeys.Enqueue(key);
@@ -90,6 +92,7 @@ namespace Microsoft.PowerShell
                 if (_readkeyStopwatch.ElapsedMilliseconds > 2)
                 {
                     // Don't spend too long in this loop if there are lots of queued keys
+                    Console.WriteLine("break");
                     break;
                 }
             }
@@ -113,6 +116,7 @@ namespace Microsoft.PowerShell
                             // small sleep to yield the CPU while we're waiting
                             // to decide what the input was. This will only run
                             // if there are no keys waiting to be read.
+                            Console.WriteLine("sleep");
                             Thread.Sleep(5);
                         }
                     }
@@ -123,6 +127,7 @@ namespace Microsoft.PowerShell
                 }
                 while (_charMap.KeyAvailable)
                 {
+                    Console.WriteLine("cmka2");
                     var key = _charMap.ReadKey();
                     _lastNKeys.Enqueue(key);
                     _queuedKeys.Enqueue(key);
