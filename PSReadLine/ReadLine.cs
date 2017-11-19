@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell
                     _lastNKeys.Enqueue(key);
                     _queuedKeys.Enqueue(key);
                 }
-                if (_readkeyStopwatch.ElapsedMilliseconds > 20)
+                if (_readkeyStopwatch.ElapsedMilliseconds > 200)
                 {
                     // Don't spend too long in this loop if there are lots of queued keys
                     Console.WriteLine("break");
@@ -122,6 +122,7 @@ namespace Microsoft.PowerShell
                     }
                     else
                     {
+                        Console.WriteLine("coka2");
                         _charMap.ProcessKey(_console.ReadKey());
                     }
                 }
